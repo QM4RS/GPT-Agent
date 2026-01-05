@@ -97,7 +97,7 @@ Think of it as a **developer-oriented GPT companion** for reviewing, modifying, 
 ### Clone & Run
 
 ```bash
-git clone https://github.com/your-username/GPT-Agent.git
+git clone https://github.com/QM4RS/GPT-Agent.git
 cd GPT-Agent
 ./gradlew run
 ```
