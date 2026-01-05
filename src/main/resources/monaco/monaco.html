@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta
+            http-equiv="Content-Security-Policy"
+            content="default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval';"
+    />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Monaco</title>
+    <style>
+        html, body { height: 100%; margin: 0; background: #0b0f14; }
+        #container { height: 100vh; width: 100vw; }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs/loader.js"></script>
+</head>
+<body>
+<div id="container"></div>
+
+<script>
+    let editor;
+    let model;
+
+    require.config({ paths: { 'vs': 'https://cdn.jsdelivr.net/npm/monaco-editor@0.52.2/min/vs' } });
+
+    function bridgeCopyToHost(text) {
+        // Java side will catch this via setPromptHandler
+        try { window.prompt('COPY_TO_CLIPBOARD', text || ''); } catch (e) {}
+    }
+
+    require(['vs/editor/editor.main'], function () {
+        editor = monaco.editor.create(document.getElementById('container'), {
+            value: '',
+            language: 'plaintext',
+            theme: 'vs-dark',
+
+            // Viewer mode
+            readOnly: true,
+            domReadOnly: true,
+
+            wordWrap: 'on',
+            minimap: { enabled: false },
+            fontSize: 13,
+            fontFamily: 'Consolas, Menlo, monospace',
+            scrollBeyondLastLine: false,
+            contextmenu: true
+        });
+
+        model = monaco.editor.createModel('', 'plaintext');
+        editor.setModel(model);
+
+        // Copy action (context menu + Ctrl/Cmd+C inside WebView)
+        editor.addAction({
+            id: 'gptagent.copy',
+            label: 'Copy',
+            keybindings: [
+                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyC
+            ],
+            contextMenuGroupId: '9_cutcopypaste',
+            contextMenuOrder: 1.0,
+            run: function (ed) {
+                const sel = ed.getSelection();
+                const m = ed.getModel();
+                if (!sel || !m) return;
+                const txt = m.getValueInRange(sel) || '';
+                if (!txt) return;
+                bridgeCopyToHost(txt);
+            }
+        });
+
+        // Optional: also allow "Copy All" quickly
+        editor.addAction({
+            id: 'gptagent.copyAll',
+            label: 'Copy All',
+            contextMenuGroupId: '9_cutcopypaste',
+            contextMenuOrder: 1.1,
+            run: function (ed) {
+                const m = ed.getModel();
+                if (!m) return;
+                const txt = m.getValue() || '';
+                if (!txt) return;
+                bridgeCopyToHost(txt);
+            }
+        });
+
+        window.setTheme = function(themeName) {
+            if (!themeName) themeName = 'vs-dark';
+            monaco.editor.setTheme(themeName);
+        };
+
+        window.setContent = function(code, lang) {
+            if (!editor) return;
+            if (!model) {
+                model = monaco.editor.createModel(code || '', lang || 'plaintext');
+                editor.setModel(model);
+                return;
+            }
+            model.setValue(code || '');
+            monaco.editor.setModelLanguage(model, lang || 'plaintext');
+            // keep viewport stable
+            editor.setScrollTop(0);
+            editor.setScrollLeft(0);
+        };
+
+        window.getContent = function() {
+            if (!model) return '';
+            return model.getValue() || '';
+        };
+
+        window.getSelectedText = function() {
+            if (!editor) return '';
+            const sel = editor.getSelection();
+            if (!sel || !model) return '';
+            return model.getValueInRange(sel) || '';
+        };
+    });
+</script>
+</body>
+</html>
