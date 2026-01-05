@@ -208,12 +208,3 @@ GPT-Agent is built for developers who want:
 * A serious, inspectable workflow
 
 If you use GPT heavily on real-world codebases, this tool is meant for you.
-
----
-
-If you want, next we can:
-
-* Tighten this README for **open-source launch**
-* Add badges (Java, JavaFX, OpenAI, Gradle)
-* Write a short **GitHub repo description**
-* Pick a clean **license** and add `LICENSE` file
